@@ -1,0 +1,2736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpareTrack — Inventory System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar-bg: #181f1c;
+      --sidebar-hover: #222b27;
+      --sidebar-active: #293530;
+      --sidebar-border: #2a3530;
+      --sidebar-text: #c4cdc8;
+      --sidebar-muted: #6e7d75;
+      --bg-page: #f2f1ed;
+      --bg-card: #ffffff;
+      --text-main: #1b211e;
+      --text-secondary: #5a645e;
+      --border-color: #d6d4cc;
+      --accent: #b84a27;
+      --accent-hover: #9c3c1d;
+      --warn-bg: #fdf3dc;
+      --warn-text: #8a5a00;
+      --danger-bg: #fbe9e7;
+      --danger-text: #a1261b;
+      --success-bg: #e4f2eb;
+      --success-text: #1c5e3c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-size: 13.5px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    code, .mono {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* ======================================================================
+       AUTHENTICATION SCREEN
+    ======================================================================= */
+    .auth-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-color: var(--bg-page);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 32px;
+    }
+
+    .auth-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      background-color: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .auth-brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.15;
+    }
+
+    .auth-brand-sub {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 22px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 9px 0;
+      font-weight: 600;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .auth-tab.active {
+      color: var(--text-main);
+      border-bottom-color: var(--accent);
+    }
+
+    /* PASSWORD CHECKLIST & INPUT HELPERS */
+    .pw-field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .pw-toggle-btn {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .pw-rules-box {
+      background-color: #f8f7f3;
+      border: 1px solid #e2e0d8;
+      border-radius: 4px;
+      padding: 9px 11px;
+      margin-top: 6px;
+      font-size: 11.5px;
+    }
+
+    .pw-rule {
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .pw-rule:last-child { margin-bottom: 0; }
+
+    .pw-rule.valid {
+      color: var(--success-text);
+      font-weight: 600;
+    }
+
+    .field-hint-err {
+      font-size: 11.5px;
+      color: var(--danger-text);
+      margin-top: 4px;
+      display: none;
+    }
+
+    /* ======================================================================
+       APPLICATION SHELL
+    ======================================================================= */
+    .app-shell {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .app-shell.authenticated {
+      display: flex;
+    }
+
+    .sidebar {
+      width: 248px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      border-right: 1px solid var(--sidebar-border);
+      z-index: 100;
+      user-select: none;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+
+    .brand-title {
+      color: #ffffff;
+      font-size: 16.5px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .brand-sub {
+      color: var(--sidebar-muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .nav-scroll {
+      padding: 14px 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .nav-group-label {
+      color: var(--sidebar-muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      padding: 14px 10px 6px 10px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 4px;
+      color: var(--sidebar-text);
+      font-weight: 500;
+      font-size: 13.5px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background-color: var(--sidebar-hover);
+      color: #ffffff;
+    }
+
+    .nav-item.active {
+      background-color: var(--sidebar-active);
+      color: #ffffff;
+      font-weight: 600;
+      border-left: 3px solid var(--accent);
+      padding-left: 9px;
+    }
+
+    .nav-svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--sidebar-border);
+      background-color: #141a17;
+      font-size: 11.5px;
+    }
+
+    .sidebar-user-name {
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 12.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .main-wrapper {
+      margin-left: 248px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .topbar {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .breadcrumb-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .breadcrumb-bar .current {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .session-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .session-pill {
+      background-color: #f6f5f1;
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .content-area {
+      padding: 28px 34px 48px 34px;
+      max-width: 1440px;
+      width: 100%;
+    }
+
+    .page-overline {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+    }
+
+    .page-title {
+      font-size: 25px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      margin-bottom: 22px;
+    }
+
+    /* TOAST BANNER */
+    .toast-banner {
+      padding: 11px 15px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+      font-weight: 500;
+      font-size: 13px;
+      border: 1px solid transparent;
+      display: none;
+    }
+
+    .toast-banner.show { display: block; }
+    .toast-success { background-color: var(--success-bg); color: var(--success-text); border-color: #b7dec9; }
+    .toast-error { background-color: var(--danger-bg); color: var(--danger-text); border-color: #f1b9b4; }
+
+    /* LAYOUT GRIDS & CARDS */
+    .split-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .full-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .kpi-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      padding: 16px 18px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+    }
+
+    .kpi-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-top: 5px;
+    }
+
+    .panel-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 15px 20px 12px 20px;
+      border-bottom: 1px solid #e8e6df;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .panel-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .panel-body {
+      padding: 18px 20px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* FORMS */
+    .form-group { margin-bottom: 13px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333a36;
+      margin-bottom: 4px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 7.5px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-main);
+      background-color: #ffffff;
+      border: 1px solid #c7c5bc;
+      border-radius: 4px;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-control.invalid-input {
+      border-color: var(--danger-text);
+      background-color: #fffbfa;
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-primary-action {
+      background-color: var(--accent);
+      color: #ffffff;
+      border: 1px solid var(--accent);
+      padding: 8px 15px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-primary-action:hover { background-color: var(--accent-hover); }
+    .btn-primary-action:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-sm-table {
+      background-color: #24302b;
+      color: #ffffff;
+      border: none;
+      padding: 4px 9px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .btn-sm-table:hover { background-color: var(--accent); }
+
+    .btn-sm-outline {
+      background-color: #ffffff;
+      color: var(--text-main);
+      border: 1px solid #b8b5ab;
+      padding: 3.5px 8px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .btn-sm-outline:hover { background-color: #efede6; }
+
+    .btn-sm-danger {
+      background-color: #ffffff;
+      color: var(--danger-text);
+      border: 1px solid #e0b4b0;
+      padding: 3.5px 8px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .btn-sm-danger:hover { background-color: var(--danger-bg); }
+
+    /* TABLES */
+    .table-wrap { overflow-x: auto; }
+    table.erp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    table.erp-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background-color: #f8f7f3;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    table.erp-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #eceae4;
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    table.erp-table tr:hover td { background-color: #faf9f6; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 10.5px;
+      font-weight: 600;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .tag-ok { background-color: var(--success-bg); color: var(--success-text); }
+    .tag-warn { background-color: var(--warn-bg); color: var(--warn-text); }
+    .tag-danger { background-color: var(--danger-bg); color: var(--danger-text); }
+    .tag-neutral { background-color: #e8e7e1; color: #3c423e; }
+
+    .rbac-lock-note {
+      background-color: #f8f7f3;
+      border-left: 3px solid #8c8a80;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    @media (max-width: 1080px) {
+      .split-layout { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. LOGIN & SIGN UP SCREEN
+  ========================================================================= -->
+  <div id="authGate" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="brand-logo">ST</div>
+        <div>
+          <div class="auth-brand-title">SpareTrack</div>
+          <div class="auth-brand-sub">Inventory System</div>
+        </div>
+      </div>
+
+      <div class="auth-tabs">
+        <div id="tabSignIn" class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</div>
+        <div id="tabSignUp" class="auth-tab" onclick="switchAuthTab('signup')">Create Account</div>
+      </div>
+
+      <div id="authErrorBox" class="toast-banner toast-error"></div>
+
+      <!-- SIGN IN FORM -->
+      <form id="formSignIn" onsubmit="handleLogin(event)" novalidate>
+        <div class="form-group">
+          <label>Username or Email</label>
+          <input class="form-control" id="login_user" placeholder="Enter username or email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="pw-field-wrap">
+            <input type="password" class="form-control" id="login_pass" placeholder="Enter password" style="padding-right:52px;" required>
+            <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility('login_pass', this)">Show</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary-action" style="width:100%; margin-top:6px;">Sign In</button>
+      </form>
+
+      <!-- SIGN UP FORM -->
+      <form id="formSignUp" onsubmit="handleSignup(event)" style="display:none;" novalidate>
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input class="form-control" id="reg_name" placeholder="Full name" minlength="3" maxlength="100" required>
+        </div>
+        <div class="form-group">
+          <label>Username *</label>
+          <input class="form-control mono" id="reg_user" placeholder="4–30 letters, numbers, or _" oninput="validateUsernameInput(this, 'reg_user_err')" required>
+          <div id="reg_user_err" class="field-hint-err">Username must be 4–30 characters (letters, numbers, underscores).</div>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" class="form-control mono" id="reg_email" placeholder="name@company.com" oninput="validateEmailInput(this, 'reg_email_err')" required>
+          <div id="reg_email_err" class="field-hint-err">Must be a valid email with "@" and domain (e.g. name@company.com).</div>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <div class="pw-field-wrap">
+            <input type="password" class="form-control" id="reg_pass" placeholder="Create strong password" style="padding-right:52px;" oninput="updatePasswordChecklist(this.value, 'reg_pw')" required>
+            <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility('reg_pass', this)">Show</button>
+          </div>
+          <div class="pw-rules-box">
+            <div id="reg_pw_len" class="pw-rule">○ At least 8 characters</div>
+            <div id="reg_pw_up" class="pw-rule">○ At least 1 uppercase & 1 lowercase letter</div>
+            <div id="reg_pw_num" class="pw-rule">○ At least 1 number (0–9)</div>
+            <div id="reg_pw_sym" class="pw-rule">○ At least 1 special symbol (!@#$%^&*)</div>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Role *</label>
+            <select class="form-control" id="reg_role" required>
+              <option value="MAINTENANCE_TECH">Maintenance Staff</option>
+              <option value="LOGISTICS_STAFF">Warehouse & Procurement</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Warehouse ID *</label>
+            <input type="number" min="1" class="form-control mono" id="reg_wh" value="1" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary-action" style="width:100%; margin-top:6px;">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       2. MAIN WORKSPACE
+  ========================================================================= -->
+  <div id="appShell" class="app-shell">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand-box">
+        <div class="brand-logo">ST</div>
+        <div>
+          <div class="brand-title">SpareTrack</div>
+          <div class="brand-sub">Inventory System</div>
+        </div>
+      </div>
+
+      <div class="nav-scroll">
+        <div class="nav-group-label">Workspace</div>
+        <div class="nav-item active" data-view="dashboard" data-roles="ADMIN,LOGISTICS_STAFF,MAINTENANCE_TECH" onclick="switchView('dashboard', 'Dashboard', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </div>
+
+        <div class="nav-group-label">Inventory</div>
+        <div class="nav-item" data-view="parts" data-roles="ADMIN,LOGISTICS_STAFF,MAINTENANCE_TECH" onclick="switchView('parts', 'Spare Parts', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Spare Parts
+        </div>
+        <div class="nav-item" data-view="inventory" data-roles="ADMIN,LOGISTICS_STAFF,MAINTENANCE_TECH" onclick="switchView('inventory', 'Inventory & Locations', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          Inventory & Locations
+        </div>
+        <div class="nav-item" data-view="transactions" data-roles="ADMIN,LOGISTICS_STAFF" onclick="switchView('transactions', 'Stock Transactions', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4M3 7h18M7 21l-4-4 4-4M21 17H3"/></svg>
+          Stock Transactions
+        </div>
+        <div class="nav-item" data-view="warehouses" data-roles="ADMIN,LOGISTICS_STAFF,MAINTENANCE_TECH" onclick="switchView('warehouses', 'Warehouses', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>
+          Warehouses
+        </div>
+
+        <div class="nav-group-label">Operations</div>
+        <div class="nav-item" data-view="requests" data-roles="ADMIN,LOGISTICS_STAFF,MAINTENANCE_TECH" onclick="switchView('requests', 'Part Requests', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Part Requests
+        </div>
+        <div class="nav-item" data-view="suppliers" data-roles="ADMIN,LOGISTICS_STAFF" onclick="switchView('suppliers', 'Suppliers', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+          Suppliers
+        </div>
+        <div class="nav-item" data-view="pos" data-roles="ADMIN,LOGISTICS_STAFF" onclick="switchView('pos', 'Purchase Orders', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Purchase Orders
+        </div>
+        <div class="nav-item" data-view="reports" data-roles="ADMIN,LOGISTICS_STAFF" onclick="switchView('reports', 'Reports', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Reports
+        </div>
+
+        <div class="nav-group-label" id="adminNavGroupLabel">Administration</div>
+        <div class="nav-item" data-view="audit" data-roles="ADMIN" onclick="switchView('audit', 'Audit Log', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Audit Log
+        </div>
+        <div class="nav-item" data-view="users" data-roles="ADMIN" onclick="switchView('users', 'Users', this)">
+          <svg class="nav-svg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Users
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-name" id="sidebarUserName">—</div>
+        <div style="margin-top:2px; color:var(--sidebar-muted);">
+          <span id="sidebarRoleBadge" class="mono" style="color:#e08256;">—</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="breadcrumb-bar">
+          <span>SpareTrack</span>
+          <span>/</span>
+          <span id="breadcrumbCurrent" class="current">Dashboard</span>
+        </div>
+
+        <div class="session-controls">
+          <div class="session-pill">
+            <strong id="topUserName">—</strong> · <span id="topUserRole" class="mono">—</span>
+          </div>
+          <button class="btn-sm-outline" onclick="handleLogout()">Sign Out</button>
+        </div>
+      </header>
+
+      <main class="content-area">
+        <div id="alertBox" class="toast-banner"></div>
+
+        <!-- =========================================================
+             VIEW 1: DASHBOARD
+        ========================================================== -->
+        <section id="view-dashboard" class="view-section active">
+          <div class="page-overline">Overview</div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Summary of spare parts, stock levels, and recent user activity.</p>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Spare Parts</div>
+              <div class="kpi-value" id="kpiParts">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Total Stock Units</div>
+              <div class="kpi-value" id="kpiTotalStock">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Active Requests</div>
+              <div class="kpi-value" id="kpiOpenReqs">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Low-Stock Items</div>
+              <div class="kpi-value" id="kpiLowStock" style="color:var(--accent);">0</div>
+            </div>
+          </div>
+
+          <div class="full-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Low-Stock Alerts</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Warehouse</th>
+                      <th>Part Number</th>
+                      <th>Part Name</th>
+                      <th>Bin Location</th>
+                      <th>Available Qty</th>
+                      <th>Reorder Level</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashLowStockBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Recent Activity</div>
+                <button id="btnViewFullAudit" class="btn-sm-outline" onclick="switchView('audit', 'Audit Log', null)">View Full Audit Log</button>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Role</th>
+                      <th>Module</th>
+                      <th>Activity</th>
+                      <th>Details</th>
+                      <th>Date & Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashAuditBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 2: SPARE PARTS
+        ========================================================== -->
+        <section id="view-parts" class="view-section">
+          <div class="page-overline">Inventory Catalog</div>
+          <h1 class="page-title">Spare Parts</h1>
+          <p class="page-subtitle">Keep part details and reorder thresholds organized.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title" id="partFormTitle">Register a spare part</div>
+                  <div class="panel-hint">Fields marked * are required.</div>
+                </div>
+                <button type="button" id="btnCancelPartEdit" class="btn-sm-outline" style="display:none;" onclick="resetPartForm()">Cancel</button>
+              </div>
+              <div class="panel-body">
+                <div id="partsRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only administrators can add or edit spare parts.
+                </div>
+                <form id="formCreatePart" onsubmit="savePart(event)">
+                  <input type="hidden" id="edit_part_id" value="">
+                  <div class="form-group">
+                    <label>Part number *</label>
+                    <input class="form-control mono" id="p_num" placeholder="e.g. BRG-1001" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Part name *</label>
+                    <input class="form-control" id="p_name" placeholder="e.g. Deep Groove Ball Bearing" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Category *</label>
+                    <select class="form-control" id="p_cat" required>
+                      <option value="">Choose category</option>
+                      <option value="Bearings">Bearings</option>
+                      <option value="Hydraulics">Hydraulics</option>
+                      <option value="Power Transmission">Power Transmission</option>
+                      <option value="Pneumatics">Pneumatics</option>
+                      <option value="Electrical & Sensors">Electrical & Sensors</option>
+                    </select>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Unit of measurement</label>
+                      <input class="form-control" id="p_uom" value="pcs">
+                    </div>
+                    <div class="form-group">
+                      <label>Unit cost (PHP) *</label>
+                      <input type="number" step="0.01" min="0.01" class="form-control mono" id="p_cost" placeholder="450.00" required>
+                    </div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Reorder level *</label>
+                      <input type="number" min="2" class="form-control mono" id="p_reorder" value="10" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Minimum stock *</label>
+                      <input type="number" min="1" class="form-control mono" id="p_min" value="3" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Manufacturer / Description *</label>
+                    <input class="form-control" id="p_mfg" placeholder="Optional description or manufacturer" required>
+                  </div>
+                  <button type="submit" id="btnAddPart" class="btn-primary-action">+ Add spare part</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Spare Parts List</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Part Number</th>
+                      <th>Part Name</th>
+                      <th>Category</th>
+                      <th>Manufacturer</th>
+                      <th>Unit Cost</th>
+                      <th>Reorder / Min</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="partsCatalogBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 3: INVENTORY & LOCATIONS
+        ========================================================== -->
+        <section id="view-inventory" class="view-section">
+          <div class="page-overline">Stock Control</div>
+          <h1 class="page-title">Inventory & Locations</h1>
+          <p class="page-subtitle">Manage storage bin locations and warehouse stock quantities.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Update bin & stock</div>
+                  <div class="panel-hint">Fields marked * are required.</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="invRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only warehouse staff and administrators can update stock.
+                </div>
+                <form onsubmit="saveBinStock(event)">
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Warehouse ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="inv_wh" placeholder="1 or 2" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Part ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="inv_part" placeholder="e.g. 1" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Storage Bin Location *</label>
+                    <input class="form-control mono" id="inv_bin" placeholder="e.g. Aisle-2-Rack-B-Bin-04" required>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Current Qty *</label>
+                      <input type="number" min="0" class="form-control mono" id="inv_curr" placeholder="25" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Reserved Qty *</label>
+                      <input type="number" min="0" class="form-control mono" id="inv_res" value="0" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Damaged Qty *</label>
+                    <input type="number" min="0" class="form-control mono" id="inv_dmg" value="0" required>
+                  </div>
+                  <button type="submit" id="btnSaveBin" class="btn-primary-action">Save inventory</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Warehouse Inventory</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Warehouse</th>
+                      <th>Part Number</th>
+                      <th>Part Name</th>
+                      <th>Bin Location</th>
+                      <th>Current</th>
+                      <th>Reserved</th>
+                      <th>Available</th>
+                      <th>Damaged</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 4: STOCK TRANSACTIONS
+        ========================================================== -->
+        <section id="view-transactions" class="view-section">
+          <div class="page-overline">Stock Movements</div>
+          <h1 class="page-title">Stock Transactions</h1>
+          <p class="page-subtitle">Transfer spare parts between warehouses and view stock movement history.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Transfer stock</div>
+                  <div class="panel-hint">Move stock between warehouse branches.</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="transferRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only warehouse staff and administrators can transfer stock.
+                </div>
+                <form onsubmit="transferStock(event)">
+                  <div class="form-group">
+                    <label>Spare Part ID *</label>
+                    <input type="number" min="1" class="form-control mono" id="tr_part" placeholder="e.g. 1" required>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>From Warehouse ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="tr_from" placeholder="1" required>
+                    </div>
+                    <div class="form-group">
+                      <label>To Warehouse ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="tr_to" placeholder="2" required>
+                    </div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Quantity *</label>
+                      <input type="number" min="1" class="form-control mono" id="tr_qty" placeholder="5" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Destination Bin *</label>
+                      <input class="form-control mono" id="tr_bin" value="ANNEX-RACK-A1" required>
+                    </div>
+                  </div>
+                  <button type="submit" id="btnRunTransfer" class="btn-primary-action">Transfer stock</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Stock Movement History</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>User</th>
+                      <th>Warehouse</th>
+                      <th>Part Number</th>
+                      <th>Type</th>
+                      <th>Previous Qty</th>
+                      <th>New Qty</th>
+                      <th>Change</th>
+                      <th>Date & Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stockTxBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 5: WAREHOUSES & MACHINES
+        ========================================================== -->
+        <section id="view-warehouses" class="view-section">
+          <div class="page-overline">Facilities & Equipment</div>
+          <h1 class="page-title">Warehouses & Machines</h1>
+          <p class="page-subtitle">Manage warehouse branches and industrial machines.</p>
+
+          <div class="split-layout" style="margin-bottom:22px;">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Add warehouse</div>
+              </div>
+              <div class="panel-body">
+                <form onsubmit="createWarehouse(event)">
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Warehouse Code *</label>
+                      <input class="form-control mono" id="wh_code" placeholder="WH-EAST-03" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Capacity *</label>
+                      <input type="number" min="100" class="form-control mono" id="wh_cap" value="10000" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Warehouse Name *</label>
+                    <input class="form-control" id="wh_name" placeholder="East Plant Annex" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Address *</label>
+                    <input class="form-control" id="wh_addr" placeholder="Industrial Zone C" required>
+                  </div>
+                  <button type="submit" id="btnAddWh" class="btn-primary-action">+ Add warehouse</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Warehouses</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Code</th>
+                      <th>Warehouse Name</th>
+                      <th>Address</th>
+                      <th>Capacity</th>
+                    </tr>
+                  </thead>
+                  <tbody id="warehousesBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Add machine</div>
+              </div>
+              <div class="panel-body">
+                <form onsubmit="createMachine(event)">
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Machine Code *</label>
+                      <input class="form-control mono" id="mc_code" placeholder="LATHE-CNC-09" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Status *</label>
+                      <select class="form-control" id="mc_status">
+                        <option value="OPERATIONAL">Operational</option>
+                        <option value="UNDER_MAINTENANCE">Under Maintenance</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Machine Name *</label>
+                    <input class="form-control" id="mc_name" placeholder="Heavy Duty Turret Lathe" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Plant Section *</label>
+                    <input class="form-control" id="mc_sec" placeholder="Machining Bay C" required>
+                  </div>
+                  <button type="submit" id="btnAddMc" class="btn-primary-action">+ Add machine</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Machines</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Machine Code</th>
+                      <th>Machine Name</th>
+                      <th>Plant Section</th>
+                      <th>Status</th>
+                      <th>Change Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="machinesBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 6: PART REQUESTS
+        ========================================================== -->
+        <section id="view-requests" class="view-section">
+          <div class="page-overline">Maintenance</div>
+          <h1 class="page-title">Part Requests</h1>
+          <p class="page-subtitle">Request spare parts for maintenance jobs and manage approvals.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Request spare parts</div>
+                  <div class="panel-hint">Fields marked * are required.</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="reqRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only maintenance staff and administrators can submit requests.
+                </div>
+                <form onsubmit="submitRequest(event)">
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Machine ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="rq_machine" placeholder="1 or 2" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Warehouse ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="rq_wh" placeholder="1" required>
+                    </div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Spare Part ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="rq_part" placeholder="1, 2, or 3" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Quantity *</label>
+                      <input type="number" min="1" class="form-control mono" id="rq_qty" placeholder="2" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Priority *</label>
+                    <select id="rq_prio" class="form-control">
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="CRITICAL">Critical</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Maintenance Task *</label>
+                    <input class="form-control" id="rq_desc" placeholder="Describe maintenance work (min 5 chars)" minlength="5" required>
+                  </div>
+                  <button type="submit" id="btnSubmitReq" class="btn-primary-action">+ Submit request</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Part Requests</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Request #</th>
+                      <th>Machine & Task</th>
+                      <th>Part</th>
+                      <th>Req / Issued / Ret</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="requestsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 7: SUPPLIERS
+        ========================================================== -->
+        <section id="view-suppliers" class="view-section">
+          <div class="page-overline">Procurement</div>
+          <h1 class="page-title">Suppliers</h1>
+          <p class="page-subtitle">Manage supplier contact information.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Add supplier</div>
+                  <div class="panel-hint">Fields marked * are required.</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="supRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only procurement staff and administrators can add suppliers.
+                </div>
+                <form onsubmit="createSupplier(event)" novalidate>
+                  <div class="form-group">
+                    <label>Supplier Code *</label>
+                    <input class="form-control mono" id="sup_code" placeholder="e.g. SUP-GATES-03" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Company Name *</label>
+                    <input class="form-control" id="sup_name" placeholder="Company name" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Contact Person *</label>
+                    <input class="form-control" id="sup_contact" placeholder="Contact person" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" class="form-control mono" id="sup_email" placeholder="email@supplier.com" oninput="validateEmailInput(this, 'sup_email_err')" required>
+                    <div id="sup_email_err" class="field-hint-err">Must be a valid email with "@" and domain.</div>
+                  </div>
+                  <div class="form-group">
+                    <label>Phone *</label>
+                    <input class="form-control mono" id="sup_phone" placeholder="+63-917-000-0000" required>
+                  </div>
+                  <button type="submit" id="btnAddSup" class="btn-primary-action">+ Add supplier</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Suppliers</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Code</th>
+                      <th>Company Name</th>
+                      <th>Contact Person</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                    </tr>
+                  </thead>
+                  <tbody id="suppliersBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 8: PURCHASE ORDERS
+        ========================================================== -->
+        <section id="view-pos" class="view-section">
+          <div class="page-overline">Purchasing</div>
+          <h1 class="page-title">Purchase Orders</h1>
+          <p class="page-subtitle">Create purchase orders and record received deliveries.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">New purchase order</div>
+                  <div class="panel-hint">Fields marked * are required.</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="poRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only procurement staff and administrators can create purchase orders.
+                </div>
+                <form onsubmit="createPO(event)">
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Supplier ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="po_sup" placeholder="1 or 2" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Warehouse ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="po_wh" placeholder="1" required>
+                    </div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Spare Part ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="po_part" placeholder="2" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Quantity *</label>
+                      <input type="number" min="1" class="form-control mono" id="po_qty" placeholder="15" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Unit Price (PHP) *</label>
+                    <input type="number" step="0.01" min="0.01" class="form-control mono" id="po_price" placeholder="6500.00" required>
+                  </div>
+                  <button type="submit" id="btnCreatePO" class="btn-primary-action">+ Create order</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Purchase Orders</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>PO #</th>
+                      <th>Supplier</th>
+                      <th>Warehouse</th>
+                      <th>Part Number</th>
+                      <th>Qty</th>
+                      <th>Total Amount</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="poBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 9: REPORTS
+        ========================================================== -->
+        <section id="view-reports" class="view-section">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div class="page-overline">Analytics</div>
+              <h1 class="page-title">Reports</h1>
+              <p class="page-subtitle">Inventory valuation, machine part usage, purchasing summary, and low-stock items.</p>
+            </div>
+            <button class="btn-sm-outline" onclick="window.print()">Print Report</button>
+          </div>
+
+          <div class="full-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Warehouse Inventory Summary</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Warehouse Code</th>
+                      <th>Warehouse Name</th>
+                      <th>Unique Parts</th>
+                      <th>Total Units</th>
+                      <th>Damaged Units</th>
+                      <th>Capacity</th>
+                      <th>Total Value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repValuationBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Spare-Part Usage by Machine</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Machine Code</th>
+                      <th>Machine Name</th>
+                      <th>Plant Section</th>
+                      <th>Maintenance Jobs</th>
+                      <th>Parts Used</th>
+                      <th>Total Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repMachineUsageBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Supplier Purchasing Summary</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Supplier Code</th>
+                      <th>Supplier Name</th>
+                      <th>Contact Person</th>
+                      <th>Total Orders</th>
+                      <th>Total Units Ordered</th>
+                      <th>Total Spend</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repSupplierBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Low-Stock Report</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Warehouse</th>
+                      <th>Part Number</th>
+                      <th>Part Name</th>
+                      <th>Category</th>
+                      <th>Current Qty</th>
+                      <th>Reserved</th>
+                      <th>Available</th>
+                      <th>Reorder Level</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lowStockBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 10: AUDIT LOG
+        ========================================================== -->
+        <section id="view-audit" class="view-section">
+          <div class="page-overline">Administration</div>
+          <h1 class="page-title">Audit Log</h1>
+          <p class="page-subtitle">Track user actions, manager approvals, inventory changes, and security events.</p>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">Activity Log</div>
+              <div class="filter-bar">
+                <select id="auditRoleFilter" class="form-control" style="width:165px; padding:5px 8px; font-size:12px;" onchange="renderAuditTable()">
+                  <option value="">All Roles</option>
+                  <option value="ADMIN">Administrator / Manager</option>
+                  <option value="LOGISTICS_STAFF">Warehouse & Procurement</option>
+                  <option value="MAINTENANCE_TECH">Maintenance Staff</option>
+                  <option value="SYSTEM">System / Security</option>
+                </select>
+                <select id="auditModuleFilter" class="form-control" style="width:165px; padding:5px 8px; font-size:12px;" onchange="renderAuditTable()">
+                  <option value="">All Modules</option>
+                  <option value="Security">Security</option>
+                  <option value="Authentication">Authentication</option>
+                  <option value="Users">Users</option>
+                  <option value="Spare Parts">Spare Parts</option>
+                  <option value="Inventory">Inventory</option>
+                  <option value="Part Requests">Part Requests</option>
+                  <option value="Purchase Orders">Purchase Orders</option>
+                  <option value="Suppliers">Suppliers</option>
+                  <option value="Warehouses">Warehouses</option>
+                  <option value="Machines">Machines</option>
+                </select>
+                <input id="auditSearchInput" class="form-control" style="width:220px; padding:5px 10px; font-size:12px;" placeholder="Search user, action, or details..." oninput="renderAuditTable()">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="erp-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Module</th>
+                    <th>Activity</th>
+                    <th>Details</th>
+                    <th>Date & Time</th>
+                  </tr>
+                </thead>
+                <tbody id="fullAuditLogBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             VIEW 11: USERS
+        ========================================================== -->
+        <section id="view-users" class="view-section">
+          <div class="page-overline">Administration</div>
+          <h1 class="page-title">Users</h1>
+          <p class="page-subtitle">Manage user accounts and role assignments.</p>
+
+          <div class="split-layout">
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Add user</div>
+                  <div class="panel-hint">Fields marked * are required.</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="userRoleNotice" class="rbac-lock-note" style="display:none;">
+                  Only administrators can create or modify user accounts.
+                </div>
+                <form id="formCreateUser" onsubmit="createUserAccount(event)" novalidate>
+                  <div class="form-group">
+                    <label>Full Name *</label>
+                    <input class="form-control" id="u_fullname" placeholder="Full name" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Username *</label>
+                    <input class="form-control mono" id="u_username" placeholder="4–30 letters, numbers, or _" oninput="validateUsernameInput(this, 'u_user_err')" required>
+                    <div id="u_user_err" class="field-hint-err">Username must be 4–30 characters (letters, numbers, underscores).</div>
+                  </div>
+                  <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" class="form-control mono" id="u_email" placeholder="user@company.com" oninput="validateEmailInput(this, 'u_email_err')" required>
+                    <div id="u_email_err" class="field-hint-err">Must be a valid email with "@" and domain.</div>
+                  </div>
+                  <div class="form-group">
+                    <label>Password *</label>
+                    <div class="pw-field-wrap">
+                      <input type="password" class="form-control" id="u_password" placeholder="Strong password" style="padding-right:52px;" oninput="updatePasswordChecklist(this.value, 'u_pw')" required>
+                      <button type="button" class="pw-toggle-btn" onclick="togglePasswordVisibility('u_password', this)">Show</button>
+                    </div>
+                    <div class="pw-rules-box">
+                      <div id="u_pw_len" class="pw-rule">○ At least 8 characters</div>
+                      <div id="u_pw_up" class="pw-rule">○ At least 1 uppercase & 1 lowercase letter</div>
+                      <div id="u_pw_num" class="pw-rule">○ At least 1 number (0–9)</div>
+                      <div id="u_pw_sym" class="pw-rule">○ At least 1 special symbol (!@#$%^&*)</div>
+                    </div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <label>Role *</label>
+                      <select class="form-control" id="u_role" required>
+                        <option value="MAINTENANCE_TECH">MAINTENANCE_TECH</option>
+                        <option value="LOGISTICS_STAFF">LOGISTICS_STAFF</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Warehouse ID *</label>
+                      <input type="number" min="1" class="form-control mono" id="u_wh" value="1" required>
+                    </div>
+                  </div>
+                  <button type="submit" id="btnCreateUser" class="btn-primary-action">+ Add user</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Users</div>
+              </div>
+              <div class="table-wrap">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Username</th>
+                      <th>Full Name</th>
+                      <th>Email</th>
+                      <th>Warehouse</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+<script>
+let currentSession = JSON.parse(localStorage.getItem('sparetrack_user') || 'null');
+let currentToken = localStorage.getItem('sparetrack_token') || '';
+let sessionVerifiedByServer = false;
+let authoritativeUserSnapshot = null;
+let cachedParts = [];
+let cachedAuditLogs = [];
+
+function getHeaders() {
+  const storedUser = JSON.parse(localStorage.getItem('sparetrack_user') || 'null');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': currentToken ? `Bearer ${currentToken}` : '',
+    'x-client-uid': storedUser ? String(storedUser.user_id) : '',
+    'x-client-role': storedUser ? String(storedUser.role) : ''
+  };
+}
+
+// ============================================================================
+// NON-BLOCKING ANTI-INSPECT-ELEMENT & LOCALSTORAGE TAMPER WATCHDOG
+// ============================================================================
+
+function enforceAuthGateIntegrity() {
+  const gate = document.getElementById('authGate');
+  const shell = document.getElementById('appShell');
+
+  if (!sessionVerifiedByServer) {
+    // Only write to DOM if someone actually tampered with the styles via Inspect Element
+    if (shell && (shell.classList.contains('authenticated') || window.getComputedStyle(shell).display !== 'none')) {
+      shell.classList.remove('authenticated');
+      shell.style.display = 'none';
+    }
+    if (gate && window.getComputedStyle(gate).display === 'none') {
+      gate.style.display = 'flex';
+    }
+  } else {
+    const rawUser = localStorage.getItem('sparetrack_user');
+    const rawToken = localStorage.getItem('sparetrack_token');
+    if (!rawUser || !rawToken) {
+      forceSecurityLogout('Session storage cleared. Please sign in again.');
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawUser);
+      if (
+        authoritativeUserSnapshot &&
+        (Number(parsed.user_id) !== Number(authoritativeUserSnapshot.user_id) ||
+         parsed.role !== authoritativeUserSnapshot.role ||
+         parsed.username !== authoritativeUserSnapshot.username)
+      ) {
+        fetch('/api/dashboard', { headers: getHeaders(), credentials: 'same-origin' }).finally(() => {
+          forceSecurityLogout('Security Alert: LocalStorage role/ID tampering detected. Session terminated.');
+        });
+      }
+    } catch (e) {
+      forceSecurityLogout('Corrupted session data detected. Logged out.');
+    }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setInterval(enforceAuthGateIntegrity, 600);
+});
+
+window.addEventListener('storage', enforceAuthGateIntegrity);
+
+function forceSecurityLogout(reasonMsg) {
+  sessionVerifiedByServer = false;
+  authoritativeUserSnapshot = null;
+  currentSession = null;
+  currentToken = '';
+  localStorage.removeItem('sparetrack_user');
+  localStorage.removeItem('sparetrack_token');
+  fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+
+  const shell = document.getElementById('appShell');
+  const gate = document.getElementById('authGate');
+  if (shell) {
+    shell.classList.remove('authenticated');
+    shell.style.display = 'none';
+  }
+  if (gate) {
+    gate.style.display = 'flex';
+  }
+  if (reasonMsg) {
+    showAuthError(reasonMsg);
+  }
+}
+
+// ============================================================================
+// FRONTEND SECURITY & VALIDATION HELPERS
+// ============================================================================
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'Show';
+  }
+}
+
+function isValidEmailFormat(email) {
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(String(email || '').trim());
+}
+
+function isValidUsernameFormat(username) {
+  return /^[a-zA-Z0-9_]{4,30}$/.test(String(username || '').trim());
+}
+
+function checkPasswordRules(pw) {
+  const s = String(pw || '');
+  return {
+    len: s.length >= 8,
+    upLow: /[A-Z]/.test(s) && /[a-z]/.test(s),
+    num: /[0-9]/.test(s),
+    sym: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(s)
+  };
+}
+
+function isPasswordStrong(pw) {
+  const r = checkPasswordRules(pw);
+  return r.len && r.upLow && r.num && r.sym;
+}
+
+function updatePasswordChecklist(val, prefix) {
+  const r = checkPasswordRules(val);
+  const setRule = (id, ok, label) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'pw-rule' + (ok ? ' valid' : '');
+    el.textContent = (ok ? '✓ ' : '○ ') + label;
+  };
+  setRule(`${prefix}_len`, r.len, 'At least 8 characters');
+  setRule(`${prefix}_up`, r.upLow, 'At least 1 uppercase & 1 lowercase letter');
+  setRule(`${prefix}_num`, r.num, 'At least 1 number (0–9)');
+  setRule(`${prefix}_sym`, r.sym, 'At least 1 special symbol (!@#$%^&*)');
+}
+
+function validateEmailInput(inputEl, errId) {
+  const val = inputEl.value.trim();
+  const ok = !val || isValidEmailFormat(val);
+  inputEl.classList.toggle('invalid-input', !ok);
+  const errEl = document.getElementById(errId);
+  if (errEl) errEl.style.display = ok ? 'none' : 'block';
+  return ok;
+}
+
+function validateUsernameInput(inputEl, errId) {
+  const val = inputEl.value.trim();
+  const ok = !val || isValidUsernameFormat(val);
+  inputEl.classList.toggle('invalid-input', !ok);
+  const errEl = document.getElementById(errId);
+  if (errEl) errEl.style.display = ok ? 'none' : 'block';
+  return ok;
+}
+
+// ============================================================================
+// AUTHENTICATION
+// ============================================================================
+
+function switchAuthTab(mode) {
+  const isSignIn = mode === 'signin';
+  document.getElementById('tabSignIn').classList.toggle('active', isSignIn);
+  document.getElementById('tabSignUp').classList.toggle('active', !isSignIn);
+  document.getElementById('formSignIn').style.display = isSignIn ? 'block' : 'none';
+  document.getElementById('formSignUp').style.display = isSignIn ? 'none' : 'block';
+  document.getElementById('authErrorBox').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const box = document.getElementById('authErrorBox');
+  box.textContent = msg;
+  box.classList.add('show');
+}
+
+async function handleLogin(e) {
+  if (e) e.preventDefault();
+  const username = document.getElementById('login_user').value.trim();
+  const password = document.getElementById('login_pass').value;
+
+  if (!username || !password) {
+    return showAuthError('Please enter both your username/email and password.');
+  }
+
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (!res.ok) return showAuthError(data.error || 'Login failed.');
+
+  currentSession = data.user;
+  currentToken = data.token;
+  authoritativeUserSnapshot = { ...data.user };
+  localStorage.setItem('sparetrack_user', JSON.stringify(currentSession));
+  localStorage.setItem('sparetrack_token', currentToken);
+  enterAuthenticatedWorkspace();
+}
+
+async function handleSignup(e) {
+  e.preventDefault();
+  const full_name = document.getElementById('reg_name').value.trim();
+  const username = document.getElementById('reg_user').value.trim();
+  const email = document.getElementById('reg_email').value.trim();
+  const password = document.getElementById('reg_pass').value;
+  const role = document.getElementById('reg_role').value;
+  const assigned_warehouse_id = document.getElementById('reg_wh').value;
+
+  if (full_name.length < 3) {
+    return showAuthError('Full name must be at least 3 characters.');
+  }
+  if (!isValidUsernameFormat(username)) {
+    return showAuthError('Username must be 4–30 characters using only letters, numbers, or underscores.');
+  }
+  if (!isValidEmailFormat(email)) {
+    return showAuthError('Please enter a valid email address containing "@" and a domain (e.g. name@company.com).');
+  }
+  if (!isPasswordStrong(password)) {
+    return showAuthError('Password must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special symbol.');
+  }
+
+  const res = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ full_name, username, password, email, role, assigned_warehouse_id })
+  });
+  const data = await res.json();
+  if (!res.ok) return showAuthError(data.error || 'Registration failed.');
+
+  currentSession = data.user;
+  currentToken = data.token;
+  authoritativeUserSnapshot = { ...data.user };
+  localStorage.setItem('sparetrack_user', JSON.stringify(currentSession));
+  localStorage.setItem('sparetrack_token', currentToken);
+  enterAuthenticatedWorkspace();
+}
+
+function handleLogout() {
+  forceSecurityLogout('');
+}
+
+function enterAuthenticatedWorkspace() {
+  loadDashboard();
+}
+
+// ============================================================================
+// NAVIGATION & ALERTS
+// ============================================================================
+
+function switchView(viewKey, breadcrumbLabel, navEl) {
+  document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('view-' + viewKey).classList.add('active');
+  document.getElementById('breadcrumbCurrent').textContent = breadcrumbLabel;
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) {
+    navEl.classList.add('active');
+  } else {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.textContent.trim() === breadcrumbLabel) n.classList.add('active');
+    });
+  }
+}
+
+function showMsg(msg, isError = false) {
+  const box = document.getElementById('alertBox');
+  box.className = `toast-banner show ${isError ? 'toast-error' : 'toast-success'}`;
+  box.textContent = msg;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => box.classList.remove('show'), 5000);
+}
+
+// ============================================================================
+// AUDIT LOG FILTER & RENDERER
+// ============================================================================
+
+function formatAuditDetails(log) {
+  if (log.activity_details) return log.activity_details;
+  if (log.part_number) {
+    return `${log.part_number} (${log.warehouse_code || 'WH'}) bin ${log.storage_bin_snapshot} changed from ${log.old_qty} to ${log.new_qty}`;
+  }
+  return 'System activity recorded';
+}
+
+function renderAuditTable() {
+  const roleFilter = document.getElementById('auditRoleFilter').value;
+  const moduleFilter = document.getElementById('auditModuleFilter').value;
+  const search = (document.getElementById('auditSearchInput').value || '').toLowerCase().trim();
+
+  const filtered = cachedAuditLogs.filter(a => {
+    if (roleFilter && a.actor_role !== roleFilter) return false;
+    if (moduleFilter && a.module_name !== moduleFilter) return false;
+    if (search) {
+      const hay = `${a.actor_name} ${a.actor_role} ${a.module_name} ${a.action_type} ${formatAuditDetails(a)}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('fullAuditLogBody').innerHTML = filtered.map(a => `
+    <tr>
+      <td class="mono">#${a.log_id}</td>
+      <td><strong>${escapeHtml(a.actor_name)}</strong></td>
+      <td><span class="tag tag-neutral">${escapeHtml(a.actor_role)}</span></td>
+      <td>${escapeHtml(a.module_name || 'Inventory')}</td>
+      <td><span class="tag ${a.action_type.includes('Blocked') || a.action_type.includes('Failed') ? 'tag-danger' : a.action_type.includes('Reject') || a.action_type.includes('Deactivat') || a.action_type.includes('Delete') || a.qty_delta < 0 ? 'tag-warn' : 'tag-ok'}">${escapeHtml(a.action_type)}</span></td>
+      <td>${escapeHtml(formatAuditDetails(a))}</td>
+      <td class="mono">${new Date(a.logged_at).toLocaleString()}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="7">No matching activity records found.</td></tr>';
+}
+
+// ============================================================================
+// DATA LOADER
+// ============================================================================
+
+async function loadDashboard() {
+  if (!currentSession || !currentToken) return;
+
+  const res = await fetch('/api/dashboard', { headers: getHeaders(), credentials: 'same-origin' });
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      return forceSecurityLogout(data.error || '');
+    }
+    return showMsg(data.error, true);
+  }
+
+  // Server verified the cryptographic session token — unlock workspace
+  sessionVerifiedByServer = true;
+  authoritativeUserSnapshot = {
+    user_id: data.activeUser.user_id,
+    username: data.activeUser.username,
+    role: data.activeRole
+  };
+  document.getElementById('authGate').style.display = 'none';
+  const shell = document.getElementById('appShell');
+  shell.style.display = 'flex';
+  shell.classList.add('authenticated');
+
+  cachedParts = data.parts;
+  cachedAuditLogs = data.auditLogs || [];
+  const role = data.activeRole;
+
+  document.getElementById('sidebarUserName').textContent = data.activeUser.full_name;
+  document.getElementById('sidebarRoleBadge').textContent = role;
+  document.getElementById('topUserName').textContent = data.activeUser.full_name;
+  document.getElementById('topUserRole').textContent = role;
+
+  const isAdmin = role === 'ADMIN';
+  const isLogistics = role === 'LOGISTICS_STAFF' || isAdmin;
+  const isTech = role === 'MAINTENANCE_TECH' || isAdmin;
+
+  // Enforce Sidebar & Layout Isolation per Role
+  document.querySelectorAll('.nav-item[data-roles]').forEach(item => {
+    const allowed = item.getAttribute('data-roles').split(',');
+    item.style.display = allowed.includes(role) ? 'flex' : 'none';
+  });
+  const adminGroupLabel = document.getElementById('adminNavGroupLabel');
+  if (adminGroupLabel) adminGroupLabel.style.display = isAdmin ? 'block' : 'none';
+
+  const btnViewFullAudit = document.getElementById('btnViewFullAudit');
+  if (btnViewFullAudit) btnViewFullAudit.style.display = isAdmin ? 'inline-block' : 'none';
+
+  const dashAuditCard = document.getElementById('dashAuditBody')?.closest('.panel-card');
+  if (dashAuditCard) dashAuditCard.style.display = isLogistics ? 'block' : 'none';
+
+  const dashLowStockCard = document.getElementById('dashLowStockBody')?.closest('.panel-card');
+  if (dashLowStockCard) dashLowStockCard.style.display = isLogistics ? 'block' : 'none';
+
+  document.getElementById('partsRoleNotice').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('btnAddPart').disabled = !isAdmin;
+  document.getElementById('btnAddWh').disabled = !isAdmin;
+  document.getElementById('btnAddMc').disabled = !isAdmin;
+
+  document.getElementById('invRoleNotice').style.display = isLogistics ? 'none' : 'block';
+  document.getElementById('btnSaveBin').disabled = !isLogistics;
+
+  document.getElementById('transferRoleNotice').style.display = isLogistics ? 'none' : 'block';
+  document.getElementById('btnRunTransfer').disabled = !isLogistics;
+
+  document.getElementById('supRoleNotice').style.display = isLogistics ? 'none' : 'block';
+  document.getElementById('btnAddSup').disabled = !isLogistics;
+
+  document.getElementById('poRoleNotice').style.display = isLogistics ? 'none' : 'block';
+  document.getElementById('btnCreatePO').disabled = !isLogistics;
+
+  document.getElementById('reqRoleNotice').style.display = isTech ? 'none' : 'block';
+  document.getElementById('btnSubmitReq').disabled = !isTech;
+
+  document.getElementById('userRoleNotice').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('btnCreateUser').disabled = !isAdmin;
+
+  // KPIs
+  document.getElementById('kpiParts').textContent = data.parts.length;
+  document.getElementById('kpiTotalStock').textContent = data.inventory.reduce((s, i) => s + Number(i.current_qty), 0);
+  document.getElementById('kpiOpenReqs').textContent = data.requests.filter(r => r.status === 'PENDING' || r.status === 'APPROVED').length;
+  document.getElementById('kpiLowStock').textContent = data.lowStock.length;
+
+  // 1. Spare Parts
+  document.getElementById('partsCatalogBody').innerHTML = data.parts.map(p => `
+    <tr>
+      <td class="mono">#${p.part_id}</td>
+      <td><code class="mono">${escapeHtml(p.part_number)}</code></td>
+      <td><strong>${escapeHtml(p.part_name)}</strong></td>
+      <td>${escapeHtml(p.category)}</td>
+      <td>${escapeHtml(p.manufacturer)}</td>
+      <td class="mono">₱${Number(p.unit_cost).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+      <td class="mono">${p.reorder_level} / ${p.min_stock_level} ${escapeHtml(p.unit_of_measure)}</td>
+      <td>
+        ${isAdmin ? `
+          <button class="btn-sm-outline" onclick="loadPartEdit(${p.part_id})">Edit</button>
+          <button class="btn-sm-danger" onclick="deletePart(${p.part_id})">Delete</button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+
+  // 2. Inventory & Locations
+  document.getElementById('inventoryBody').innerHTML = data.inventory.map(i => `
+    <tr>
+      <td><span class="tag tag-neutral">${escapeHtml(i.warehouse_code)}</span></td>
+      <td class="mono"><code>${escapeHtml(i.part_number)}</code></td>
+      <td><strong>${escapeHtml(i.part_name)}</strong></td>
+      <td class="mono">${escapeHtml(i.storage_bin_location)}</td>
+      <td class="mono"><strong>${i.current_qty}</strong></td>
+      <td class="mono">${i.reserved_qty}</td>
+      <td class="mono">${i.available_qty}</td>
+      <td class="mono" style="${i.damaged_qty > 0 ? 'color:var(--danger-text);font-weight:700;' : ''}">${i.damaged_qty}</td>
+      <td>
+        ${isLogistics ? `<button class="btn-sm-outline" onclick="fillBinForm(${i.warehouse_id}, ${i.part_id}, '${escapeHtml(i.storage_bin_location)}', ${i.current_qty}, ${i.reserved_qty}, ${i.damaged_qty})">Edit</button>` : '—'}
+      </td>
+    </tr>
+  `).join('');
+
+  // 3. Low-Stock Alerts
+  const lowRows = data.lowStock.map(l => `
+    <tr>
+      <td><span class="tag tag-neutral">${escapeHtml(l.warehouse_code)}</span></td>
+      <td><code class="mono">${escapeHtml(l.part_number)}</code></td>
+      <td><strong>${escapeHtml(l.part_name)}</strong></td>
+      <td class="mono">${escapeHtml(l.storage_bin_location)}</td>
+      <td class="mono" style="color:var(--danger-text);font-weight:700;">${l.available_qty}</td>
+      <td class="mono">${l.reorder_level}</td>
+      <td><span class="tag ${l.stock_health === 'CRITICAL_SHORTAGE' ? 'tag-danger' : 'tag-warn'}">${escapeHtml(l.stock_health)}</span></td>
+    </tr>
+  `).join('');
+  document.getElementById('dashLowStockBody').innerHTML = lowRows || '<tr><td colspan="7">No low-stock items.</td></tr>';
+
+  document.getElementById('lowStockBody').innerHTML = data.lowStock.map(l => `
+    <tr>
+      <td><span class="tag tag-neutral">${escapeHtml(l.warehouse_code)}</span></td>
+      <td><code class="mono">${escapeHtml(l.part_number)}</code></td>
+      <td><strong>${escapeHtml(l.part_name)}</strong></td>
+      <td>${escapeHtml(l.category)}</td>
+      <td class="mono">${l.current_qty}</td>
+      <td class="mono">${l.reserved_qty}</td>
+      <td class="mono" style="color:var(--danger-text);font-weight:700;">${l.available_qty}</td>
+      <td class="mono">${l.reorder_level}</td>
+      <td><span class="tag ${l.stock_health === 'CRITICAL_SHORTAGE' ? 'tag-danger' : 'tag-warn'}">${escapeHtml(l.stock_health)}</span></td>
+    </tr>
+  `).join('');
+
+  // 4. Maintenance Requests
+  document.getElementById('requestsBody').innerHTML = data.requests.map(r => {
+    let actions = [];
+    if (isAdmin && r.status === 'PENDING') {
+      actions.push(`<button class="btn-sm-outline" onclick="updateReqStatus(${r.request_id}, 'APPROVED')">Approve</button>`);
+      actions.push(`<button class="btn-sm-danger" onclick="updateReqStatus(${r.request_id}, 'REJECTED')">Reject</button>`);
+    }
+    if (isLogistics && r.status === 'APPROVED') {
+      actions.push(`<button class="btn-sm-table" onclick="releaseReq(${r.request_id})">Release Stock</button>`);
+    }
+    if ((isTech || isLogistics) && r.status === 'RELEASED' && (r.issued_qty - r.returned_qty) > 0) {
+      actions.push(`<button class="btn-sm-outline" onclick="returnPart(${r.request_id}, ${r.part_id}, ${r.warehouse_id})">Return Unused</button>`);
+    }
+    return `
+      <tr>
+        <td class="mono"><strong>${escapeHtml(r.request_number)}</strong></td>
+        <td>
+          <code class="mono">${escapeHtml(r.machine_code)}</code> (${escapeHtml(r.warehouse_code)})
+          <div style="font-size:11.5px;color:var(--text-secondary);">${escapeHtml(r.maintenance_task_desc)}</div>
+        </td>
+        <td class="mono">${escapeHtml(r.part_number || '-')}</td>
+        <td class="mono">${r.requested_qty || 0} / <strong>${r.issued_qty || 0}</strong> / ${r.returned_qty || 0}</td>
+        <td><span class="tag ${r.priority === 'CRITICAL' ? 'tag-danger' : 'tag-warn'}">${escapeHtml(r.priority)}</span></td>
+        <td><span class="tag ${r.status === 'RELEASED' ? 'tag-ok' : r.status === 'REJECTED' ? 'tag-danger' : 'tag-neutral'}">${escapeHtml(r.status)}</span></td>
+        <td style="display:flex; gap:5px; flex-wrap:wrap;">${actions.join('') || '—'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // 5. Purchase Orders
+  document.getElementById('poBody').innerHTML = data.purchaseOrders.map(p => `
+    <tr>
+      <td class="mono"><strong>${escapeHtml(p.po_number)}</strong></td>
+      <td>${escapeHtml(p.supplier_name)}</td>
+      <td><span class="tag tag-neutral">${escapeHtml(p.warehouse_code)}</span></td>
+      <td class="mono">${escapeHtml(p.part_number)}</td>
+      <td class="mono"><strong>${p.ordered_qty}</strong></td>
+      <td class="mono">₱${Number(p.total_amount).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+      <td><span class="tag ${p.po_status === 'RECEIVED' ? 'tag-ok' : 'tag-warn'}">${escapeHtml(p.po_status)}</span></td>
+      <td>
+        ${isLogistics && p.po_status === 'ORDERED'
+          ? `<button class="btn-sm-table" onclick="receivePO(${p.po_id})">Mark Received</button>`
+          : '—'}
+      </td>
+    </tr>
+  `).join('');
+
+  // 6. Recent Activity & Audit Logs
+  document.getElementById('dashAuditBody').innerHTML = cachedAuditLogs.slice(0, 12).map(a => `
+    <tr>
+      <td><strong>${escapeHtml(a.actor_name)}</strong></td>
+      <td><span class="tag tag-neutral">${escapeHtml(a.actor_role)}</span></td>
+      <td>${escapeHtml(a.module_name || 'Inventory')}</td>
+      <td><span class="tag ${a.action_type.includes('Blocked') || a.action_type.includes('Failed') ? 'tag-danger' : a.action_type.includes('Reject') || a.action_type.includes('Deactivat') || a.action_type.includes('Delete') || a.qty_delta < 0 ? 'tag-warn' : 'tag-ok'}">${escapeHtml(a.action_type)}</span></td>
+      <td>${escapeHtml(formatAuditDetails(a))}</td>
+      <td class="mono">${new Date(a.logged_at).toLocaleString()}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6">No recent activity recorded yet.</td></tr>';
+
+  const stockMovements = cachedAuditLogs.filter(a => a.qty_delta !== 0 || a.module_name === 'Inventory');
+  document.getElementById('stockTxBody').innerHTML = stockMovements.map(a => `
+    <tr>
+      <td class="mono">#${a.log_id}</td>
+      <td><strong>${escapeHtml(a.actor_name)}</strong></td>
+      <td><span class="tag tag-neutral">${escapeHtml(a.warehouse_code || 'WH')}</span></td>
+      <td class="mono">${escapeHtml(a.part_number || '—')}</td>
+      <td><span class="tag ${a.qty_delta >= 0 ? 'tag-ok' : 'tag-warn'}">${escapeHtml(a.action_type)}</span></td>
+      <td class="mono">${a.old_qty}</td>
+      <td class="mono">${a.new_qty}</td>
+      <td class="mono"><strong>${a.qty_delta > 0 ? '+' + a.qty_delta : a.qty_delta}</strong></td>
+      <td class="mono">${new Date(a.logged_at).toLocaleString()}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="9">No stock movements recorded yet.</td></tr>';
+
+  renderAuditTable();
+
+  // 7. Warehouses & Machines
+  document.getElementById('warehousesBody').innerHTML = data.warehouses.map(w => `
+    <tr>
+      <td class="mono">#${w.warehouse_id}</td>
+      <td><code class="mono">${escapeHtml(w.warehouse_code)}</code></td>
+      <td><strong>${escapeHtml(w.warehouse_name)}</strong></td>
+      <td>${escapeHtml(w.location_address)}</td>
+      <td class="mono">${Number(w.capacity_limit).toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('machinesBody').innerHTML = data.machines.map(m => `
+    <tr>
+      <td class="mono">#${m.machine_id}</td>
+      <td><code class="mono">${escapeHtml(m.machine_code)}</code></td>
+      <td><strong>${escapeHtml(m.machine_name)}</strong></td>
+      <td>${escapeHtml(m.plant_section)}</td>
+      <td><span class="tag ${m.operational_status === 'OPERATIONAL' ? 'tag-ok' : m.operational_status === 'UNDER_MAINTENANCE' ? 'tag-warn' : 'tag-danger'}">${escapeHtml(m.operational_status)}</span></td>
+      <td>
+        ${(isAdmin || isTech) ? `
+          <select class="form-control" style="padding:3px 6px; font-size:11.5px; width:auto;" onchange="changeMachineStatus(${m.machine_id}, this.value)">
+            <option value="OPERATIONAL" ${m.operational_status === 'OPERATIONAL' ? 'selected' : ''}>OPERATIONAL</option>
+            <option value="UNDER_MAINTENANCE" ${m.operational_status === 'UNDER_MAINTENANCE' ? 'selected' : ''}>UNDER_MAINTENANCE</option>
+            <option value="DECOMMISSIONED" ${m.operational_status === 'DECOMMISSIONED' ? 'selected' : ''}>DECOMMISSIONED</option>
+          </select>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+
+  // 8. Suppliers
+  document.getElementById('suppliersBody').innerHTML = data.suppliers.map(s => `
+    <tr>
+      <td class="mono">#${s.supplier_id}</td>
+      <td><code class="mono">${escapeHtml(s.supplier_code)}</code></td>
+      <td><strong>${escapeHtml(s.supplier_name)}</strong></td>
+      <td>${escapeHtml(s.contact_person)}</td>
+      <td class="mono">${escapeHtml(s.email)}</td>
+      <td class="mono">${escapeHtml(s.phone)}</td>
+    </tr>
+  `).join('');
+
+  // 9. Reports
+  document.getElementById('repValuationBody').innerHTML = data.reports.warehouseValuationReport.map(w => `
+    <tr>
+      <td><code class="mono">${escapeHtml(w.warehouse_code)}</code></td>
+      <td><strong>${escapeHtml(w.warehouse_name)}</strong></td>
+      <td class="mono">${w.distinct_skus}</td>
+      <td class="mono"><strong>${w.total_physical_units}</strong></td>
+      <td class="mono">${w.total_damaged_units}</td>
+      <td class="mono">${Number(w.capacity_limit).toLocaleString()}</td>
+      <td class="mono"><strong>₱${Number(w.total_inventory_value).toLocaleString('en-US', {minimumFractionDigits:2})}</strong></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('repMachineUsageBody').innerHTML = data.reports.machineUsageReport.map(m => `
+    <tr>
+      <td><code class="mono">${escapeHtml(m.machine_code)}</code></td>
+      <td><strong>${escapeHtml(m.machine_name)}</strong></td>
+      <td>${escapeHtml(m.plant_section)}</td>
+      <td class="mono">${m.total_jobs}</td>
+      <td class="mono"><strong>${m.net_parts_consumed}</strong> pcs</td>
+      <td class="mono"><strong>₱${Number(m.maintenance_part_cost).toLocaleString('en-US', {minimumFractionDigits:2})}</strong></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('repSupplierBody').innerHTML = data.reports.supplierSpendReport.map(s => `
+    <tr>
+      <td><code class="mono">${escapeHtml(s.supplier_code)}</code></td>
+      <td><strong>${escapeHtml(s.supplier_name)}</strong></td>
+      <td>${escapeHtml(s.contact_person)}</td>
+      <td class="mono">${s.total_orders}</td>
+      <td class="mono">${s.total_units_ordered}</td>
+      <td class="mono"><strong>₱${Number(s.total_spend).toLocaleString('en-US', {minimumFractionDigits:2})}</strong></td>
+    </tr>
+  `).join('');
+
+  // 10. Users
+  document.getElementById('usersBody').innerHTML = data.users.map(u => `
+    <tr>
+      <td class="mono">#${u.user_id}</td>
+      <td class="mono">${escapeHtml(u.username)}</td>
+      <td><strong>${escapeHtml(u.full_name)}</strong></td>
+      <td class="mono">${escapeHtml(u.email)}</td>
+      <td><span class="tag tag-neutral">${escapeHtml(u.warehouse_code || 'WH-1')}</span></td>
+      <td><span class="tag tag-neutral">${escapeHtml(u.role)}</span></td>
+      <td><span class="tag ${u.is_active ? 'tag-ok' : 'tag-danger'}">${u.is_active ? 'ACTIVE' : 'INACTIVE'}</span></td>
+      <td>
+        ${isAdmin ? `
+          <button class="btn-sm-outline" onclick="toggleUserStatus(${u.user_id}, '${escapeHtml(u.role)}', ${!u.is_active}, ${u.assigned_warehouse_id || 1})">
+            ${u.is_active ? 'Deactivate' : 'Activate'}
+          </button>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================================
+// ACTIONS WITH CLIENT-SIDE PRE-VALIDATION
+// ============================================================================
+
+function loadPartEdit(partId) {
+  const part = cachedParts.find(p => p.part_id === partId);
+  if (!part) return;
+  document.getElementById('edit_part_id').value = part.part_id;
+  document.getElementById('p_num').value = part.part_number;
+  document.getElementById('p_num').readOnly = true;
+  document.getElementById('p_name').value = part.part_name;
+  document.getElementById('p_cat').value = part.category;
+  document.getElementById('p_uom').value = part.unit_of_measure;
+  document.getElementById('p_cost').value = part.unit_cost;
+  document.getElementById('p_reorder').value = part.reorder_level;
+  document.getElementById('p_min').value = part.min_stock_level;
+  document.getElementById('p_mfg').value = part.manufacturer;
+  document.getElementById('partFormTitle').textContent = `Edit spare part`;
+  document.getElementById('btnAddPart').textContent = 'Save changes';
+  document.getElementById('btnCancelPartEdit').style.display = 'inline-block';
+}
+
+function resetPartForm() {
+  document.getElementById('formCreatePart').reset();
+  document.getElementById('edit_part_id').value = '';
+  document.getElementById('p_num').readOnly = false;
+  document.getElementById('partFormTitle').textContent = 'Register a spare part';
+  document.getElementById('btnAddPart').textContent = '+ Add spare part';
+  document.getElementById('btnCancelPartEdit').style.display = 'none';
+}
+
+async function savePart(e) {
+  e.preventDefault();
+  const editId = document.getElementById('edit_part_id').value;
+  const cost = Number(p_cost.value);
+  const reorder = Number(p_reorder.value);
+  const minStock = Number(p_min.value);
+
+  if (cost <= 0) return showMsg('Unit cost must be greater than 0.', true);
+  if (reorder <= minStock) return showMsg('Reorder level must be strictly greater than Minimum stock level.', true);
+
+  const url = editId ? `/api/parts/${editId}` : '/api/parts';
+  const method = editId ? 'PUT' : 'POST';
+
+  const res = await fetch(url, {
+    method,
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      part_number: p_num.value.trim(),
+      part_name: p_name.value.trim(),
+      category: p_cat.value,
+      unit_of_measure: p_uom.value.trim(),
+      manufacturer: p_mfg.value.trim(),
+      unit_cost: cost,
+      reorder_level: reorder,
+      min_stock_level: minStock
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  if (res.ok) resetPartForm();
+  loadDashboard();
+}
+
+async function deletePart(partId) {
+  const res = await fetch(`/api/parts/${partId}`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+    credentials: 'same-origin'
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+function fillBinForm(whId, partId, bin, curr, resQty, dmg) {
+  document.getElementById('inv_wh').value = whId;
+  document.getElementById('inv_part').value = partId;
+  document.getElementById('inv_bin').value = bin;
+  document.getElementById('inv_curr').value = curr;
+  document.getElementById('inv_res').value = resQty;
+  document.getElementById('inv_dmg').value = dmg;
+}
+
+async function saveBinStock(e) {
+  e.preventDefault();
+  if (Number(inv_res.value) > Number(inv_curr.value)) {
+    return showMsg('Reserved quantity cannot exceed Current quantity.', true);
+  }
+  const res = await fetch('/api/inventory/bin', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      warehouse_id: inv_wh.value,
+      part_id: inv_part.value,
+      storage_bin_location: inv_bin.value.trim(),
+      current_qty: inv_curr.value,
+      reserved_qty: inv_res.value,
+      damaged_qty: inv_dmg.value
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function transferStock(e) {
+  e.preventDefault();
+  if (tr_from.value === tr_to.value) {
+    return showMsg('Source and destination warehouses must be different.', true);
+  }
+  const res = await fetch('/api/inventory/transfer', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      part_id: tr_part.value,
+      from_warehouse_id: tr_from.value,
+      to_warehouse_id: tr_to.value,
+      transfer_qty: tr_qty.value,
+      target_bin: tr_bin.value.trim()
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function createWarehouse(e) {
+  e.preventDefault();
+  const res = await fetch('/api/warehouses', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      warehouse_code: wh_code.value.trim(),
+      warehouse_name: wh_name.value.trim(),
+      location_address: wh_addr.value.trim(),
+      capacity_limit: wh_cap.value
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function createMachine(e) {
+  e.preventDefault();
+  const res = await fetch('/api/machines', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      machine_code: mc_code.value.trim(),
+      machine_name: mc_name.value.trim(),
+      plant_section: mc_sec.value.trim(),
+      operational_status: mc_status.value
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function changeMachineStatus(machineId, operational_status) {
+  const res = await fetch(`/api/machines/${machineId}/status`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({ operational_status })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function submitRequest(e) {
+  e.preventDefault();
+  const res = await fetch('/api/requests', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      machine_id: rq_machine.value,
+      warehouse_id: rq_wh.value,
+      part_id: rq_part.value,
+      requested_qty: rq_qty.value,
+      priority: rq_prio.value,
+      maintenance_task_desc: rq_desc.value.trim()
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function updateReqStatus(request_id, status) {
+  const res = await fetch('/api/requests/status', {
+    method: 'PATCH',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({ request_id, status })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function releaseReq(request_id) {
+  const res = await fetch('/api/requests/release', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({ request_id })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function returnPart(request_id, part_id, warehouse_id) {
+  const res = await fetch('/api/requests/return', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({ request_id, part_id, warehouse_id, return_qty: 1 })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function createSupplier(e) {
+  e.preventDefault();
+  if (!isValidEmailFormat(sup_email.value)) {
+    return showMsg('Please enter a valid supplier email address (must include "@" and domain).', true);
+  }
+  const res = await fetch('/api/suppliers', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      supplier_code: sup_code.value.trim(),
+      supplier_name: sup_name.value.trim(),
+      contact_person: sup_contact.value.trim(),
+      email: sup_email.value.trim(),
+      phone: sup_phone.value.trim()
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function createPO(e) {
+  e.preventDefault();
+  const res = await fetch('/api/purchase-orders', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      supplier_id: po_sup.value,
+      warehouse_id: po_wh.value,
+      part_id: po_part.value,
+      ordered_qty: po_qty.value,
+      unit_price: po_price.value
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function receivePO(po_id) {
+  const res = await fetch('/api/purchase-orders/receive', {
+    method: 'PATCH',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({ po_id })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+async function createUserAccount(e) {
+  e.preventDefault();
+  const full_name = u_fullname.value.trim();
+  const username = u_username.value.trim();
+  const email = u_email.value.trim();
+  const password = u_password.value;
+
+  if (!isValidUsernameFormat(username)) {
+    return showMsg('Username must be 4–30 characters using letters, numbers, or underscores.', true);
+  }
+  if (!isValidEmailFormat(email)) {
+    return showMsg('Email must include "@" and a valid domain (e.g. user@company.com).', true);
+  }
+  if (!isPasswordStrong(password)) {
+    return showMsg('Password must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special symbol.', true);
+  }
+
+  const res = await fetch('/api/users', {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      full_name,
+      username,
+      password,
+      email,
+      role: u_role.value,
+      assigned_warehouse_id: u_wh.value
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  if (res.ok) {
+    document.getElementById('formCreateUser').reset();
+    updatePasswordChecklist('', 'u_pw');
+  }
+  loadDashboard();
+}
+
+async function toggleUserStatus(userId, role, isActive, assignedWh) {
+  const res = await fetch(`/api/users/${userId}`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      role,
+      is_active: isActive,
+      assigned_warehouse_id: assignedWh
+    })
+  });
+  const d = await res.json();
+  showMsg(d.message || d.error, !res.ok);
+  loadDashboard();
+}
+
+if (currentSession && currentToken) {
+  enterAuthenticatedWorkspace();
+} else {
+  localStorage.removeItem('sparetrack_user');
+  localStorage.removeItem('sparetrack_token');
+}
+</script>
+</body>
+</html>
